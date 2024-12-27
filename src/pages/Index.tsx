@@ -16,6 +16,32 @@ interface Message {
   timestamp: Date;
 }
 
+const getBotResponse = (userMessage: string): string => {
+  const normalizedMessage = userMessage.toLowerCase();
+  
+  if (normalizedMessage.includes('olá') || normalizedMessage.includes('oi')) {
+    return 'Olá! Como posso ajudar você hoje?';
+  }
+  
+  if (normalizedMessage.includes('como vai') || normalizedMessage.includes('tudo bem')) {
+    return 'Estou muito bem, obrigado por perguntar! E você, como está?';
+  }
+  
+  if (normalizedMessage.includes('tchau') || normalizedMessage.includes('até logo')) {
+    return 'Até logo! Foi um prazer conversar com você!';
+  }
+  
+  if (normalizedMessage.includes('obrigado') || normalizedMessage.includes('obrigada')) {
+    return 'Por nada! Estou sempre à disposição para ajudar!';
+  }
+  
+  if (normalizedMessage.includes('quem é você')) {
+    return 'Sou um assistente virtual criado para ajudar e conversar com você!';
+  }
+  
+  return 'Interessante! Me conte mais sobre isso...';
+};
+
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
@@ -48,9 +74,8 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // Simulate bot response
       setTimeout(() => {
-        const botResponse = "Obrigado pela sua mensagem. Estou processando sua solicitação.";
+        const botResponse = getBotResponse(userMessage.text);
         const botMessage: Message = {
           id: (Date.now() + 1).toString(),
           text: botResponse,
@@ -59,9 +84,8 @@ const Index = () => {
         };
         setMessages((prev) => [...prev, botMessage]);
         setIsLoading(false);
-        // Reproduz a resposta do bot em áudio usando o Google TTS
         textToSpeech(botResponse);
-      }, 1500);
+      }, 1000);
     } catch (error) {
       toast({
         title: "Erro",
