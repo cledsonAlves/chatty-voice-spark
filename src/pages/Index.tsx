@@ -1,87 +1,45 @@
 import { useState, useRef } from "react";
-import { PollyClient, SynthesizeSpeechCommand } from "@aws-sdk/client-polly";
 import { useToast } from "@/hooks/use-toast";
+import { textToSpeech } from "@/services/textToSpeech";
 
-const getBotResponse = async (userMessage) => {
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer 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`,
-      },
-      body: JSON.stringify({
-        model: "llama3-8b-8192",
-        messages: [
-          {
-            role: "user",
-            content: userMessage,
-          },
-        ],
-      }),
-    });
+interface Message {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+}
 
-    if (!response.ok) {
-      throw new Error("Erro ao buscar resposta da API do Groq");
-    }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || "Desculpe, não consegui processar sua mensagem.";
-  } catch (error) {
-    console.error("Erro na API do Groq:", error);
-    return "Houve um problema ao conectar com a API. Tente novamente mais tarde.";
+const getBotResponse = (userMessage: string): string => {
+  const normalizedMessage = userMessage.toLowerCase();
+  
+  if (normalizedMessage.includes('olá') || normalizedMessage.includes('oi')) {
+    return 'Olá! Como posso ajudar você hoje?';
   }
-};
-
-const textToSpeech = async (text: string) => {
-  const client = new PollyClient({
-    region: "us-east-1",
-    credentials: {
-      accessKeyId: "AKIA4T4OCLRRIEQHUEE5",
-      secretAccessKey: "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",
-    },
-  });
-
-  try {
-    const command = new SynthesizeSpeechCommand({
-      Text: text,
-      OutputFormat: "mp3",
-      VoiceId: "Vitoria",
-      Engine: "neural",
-    });
-
-    const response = await client.send(command);
-
-    if (response.AudioStream) {
-      const audioChunks = [];
-      const reader = response.AudioStream.getReader();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        if (value) audioChunks.push(value);
-      }
-
-      const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      const audio = new Audio(audioUrl);
-      audio.onplay = () => setIsSpeaking(true);
-      audio.onended = () => setIsSpeaking(false);
-      audio.play().catch((error) => {
-        console.error("Erro ao reproduzir áudio:", error);
-      });
-    } else {
-      console.error("Nenhum áudio retornado pelo Polly.");
-    }
-  } catch (error) {
-    console.error("Erro ao sintetizar áudio com Polly:", error);
+  
+  if (normalizedMessage.includes('como vai') || normalizedMessage.includes('tudo bem')) {
+    return 'Estou muito bem, obrigado por perguntar! E você, como está?';
   }
+  
+  if (normalizedMessage.includes('tchau') || normalizedMessage.includes('até logo')) {
+    return 'Até logo! Foi um prazer conversar com você!';
+  }
+  
+  if (normalizedMessage.includes('obrigado') || normalizedMessage.includes('obrigada')) {
+    return 'Por nada! Estou sempre à disposição para ajudar!';
+  }
+  
+  if (normalizedMessage.includes('quem é você')) {
+    return 'Sou um assistente virtual criado para ajudar e conversar com você!';
+  }
+  
+  return 'Interessante! Me conte mais sobre isso...';
 };
 
 const Index = () => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const recognitionRef = useRef(null);
   const { toast } = useToast();
 
@@ -105,8 +63,7 @@ const Index = () => {
       return;
     }
 
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
 
@@ -118,13 +75,37 @@ const Index = () => {
       const transcript = event.results[0][0].transcript;
       setIsListening(false);
 
-      toast({
-        title: "Mensagem capturada",
-        description: transcript,
-      });
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        text: transcript,
+        isUser: true,
+        timestamp: new Date(),
+      };
 
-      const botResponse = await getBotResponse(transcript);
-      await textToSpeech(botResponse, setIsSpeaking);
+      setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
+
+      try {
+        setTimeout(() => {
+          const botResponse = getBotResponse(transcript);
+          const botMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: botResponse,
+            isUser: false,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, botMessage]);
+          setIsLoading(false);
+          textToSpeech(botResponse, setIsSpeaking);
+        }, 1000);
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao processar sua mensagem.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     };
 
     recognition.onerror = (event) => {
