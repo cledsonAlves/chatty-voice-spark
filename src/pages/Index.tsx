@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import ChatMessage from "@/components/ChatMessage";
 import LoadingDots from "@/components/LoadingDots";
+import { textToSpeech } from "@/services/textToSpeech";
 
 interface Message {
   id: string;
@@ -48,14 +49,17 @@ const Index = () => {
 
     // Simulate bot response
     setTimeout(() => {
+      const botResponse = "Obrigado pela sua mensagem. Estou processando sua solicitação.";
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Thank you for your message. I'm processing your request.",
+        text: botResponse,
         isUser: false,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
       setIsLoading(false);
+      // Reproduz a resposta do bot em áudio
+      textToSpeech(botResponse);
     }, 1500);
   };
 
@@ -68,17 +72,38 @@ const Index = () => {
 
   const handleVoiceInput = () => {
     toast({
-      title: "Voice Input",
-      description: "Voice input feature coming soon!",
+      title: "Entrada por Voz",
+      description: "Funcionalidade de entrada por voz em breve!",
     });
+  };
+
+  const handleSpeakMessage = async (text: string) => {
+    try {
+      await textToSpeech(text);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível reproduzir o áudio.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
       <Card className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden backdrop-blur-sm">
         <div className="flex items-center justify-between border-b p-4">
-          <h1 className="text-xl font-semibold">AI Assistant</h1>
-          <Button variant="ghost" size="icon">
+          <h1 className="text-xl font-semibold">Assistente AI</h1>
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => {
+              const lastBotMessage = messages.findLast(m => !m.isUser);
+              if (lastBotMessage) {
+                handleSpeakMessage(lastBotMessage.text);
+              }
+            }}
+          >
             <Volume2 className="h-5 w-5" />
           </Button>
         </div>
@@ -104,7 +129,7 @@ const Index = () => {
               <Mic className="h-5 w-5" />
             </Button>
             <Input
-              placeholder="Type your message..."
+              placeholder="Digite sua mensagem..."
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
