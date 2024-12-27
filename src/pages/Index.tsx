@@ -89,6 +89,15 @@ const Index = () => {
     }
   };
 
+  const getLastBotMessage = (messages: Message[]): Message | undefined => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (!messages[i].isUser) {
+        return messages[i];
+      }
+    }
+    return undefined;
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-background to-muted/50 p-4">
       <Card className="relative flex h-[80vh] w-full max-w-2xl flex-col overflow-hidden backdrop-blur-sm">
@@ -98,7 +107,7 @@ const Index = () => {
             variant="ghost" 
             size="icon"
             onClick={() => {
-              const lastBotMessage = messages.findLast(m => !m.isUser);
+              const lastBotMessage = getLastBotMessage(messages);
               if (lastBotMessage) {
                 handleSpeakMessage(lastBotMessage.text);
               }
