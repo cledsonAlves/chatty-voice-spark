@@ -9,6 +9,14 @@ interface Message {
   timestamp: Date;
 }
 
+// Add type declaration for the SpeechRecognition API
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
+}
+
 const getBotResponse = (userMessage: string): string => {
   const normalizedMessage = userMessage.toLowerCase();
   
@@ -40,7 +48,7 @@ const Index = () => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const recognitionRef = useRef(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const { toast } = useToast();
 
   const handleVoiceInput = () => {
@@ -63,8 +71,8 @@ const Index = () => {
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionAPI();
     recognitionRef.current = recognition;
 
     recognition.lang = "pt-BR";
@@ -154,20 +162,22 @@ const Index = () => {
         </button>
       </div>
 
-      <style jsx>{`
-        @keyframes sound-wave {
-          0% {
-            box-shadow: 0 0 0 0 rgba(0, 0, 255, 0.5);
+      <style>
+        {`
+          @keyframes sound-wave {
+            0% {
+              box-shadow: 0 0 0 0 rgba(0, 0, 255, 0.5);
+            }
+            100% {
+              box-shadow: 0 0 20px 20px rgba(0, 0, 255, 0);
+            }
           }
-          100% {
-            box-shadow: 0 0 20px 20px rgba(0, 0, 255, 0);
-          }
-        }
 
-        .animate-sound-wave {
-          animation: sound-wave 1.5s infinite;
-        }
-      `}</style>
+          .animate-sound-wave {
+            animation: sound-wave 1.5s infinite;
+          }
+        `}
+      </style>
     </div>
   );
 };
