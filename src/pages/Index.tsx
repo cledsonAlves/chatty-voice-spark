@@ -47,20 +47,29 @@ const Index = () => {
     setInputText("");
     setIsLoading(true);
 
-    // Simulate bot response
-    setTimeout(() => {
-      const botResponse = "Obrigado pela sua mensagem. Estou processando sua solicitação.";
-      const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: botResponse,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, botMessage]);
+    try {
+      // Simulate bot response
+      setTimeout(() => {
+        const botResponse = "Obrigado pela sua mensagem. Estou processando sua solicitação.";
+        const botMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          text: botResponse,
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        setIsLoading(false);
+        // Reproduz a resposta do bot em áudio usando o Google TTS
+        textToSpeech(botResponse);
+      }, 1500);
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar sua mensagem.",
+        variant: "destructive",
+      });
       setIsLoading(false);
-      // Reproduz a resposta do bot em áudio
-      textToSpeech(botResponse);
-    }, 1500);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
