@@ -9,11 +9,34 @@ interface Message {
   timestamp: Date;
 }
 
-// Add type declaration for the SpeechRecognition API
+// Add proper type declarations for the SpeechRecognition API
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResult {
+  transcript: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => any) | null;
+  onend: ((this: SpeechRecognition, ev: Event) => any) | null;
+  onerror: ((this: SpeechRecognition, ev: Event) => any) | null;
+  start(): void;
+  stop(): void;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: {
+      new(): SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new(): SpeechRecognition;
+    };
   }
 }
 
@@ -79,7 +102,7 @@ const Index = () => {
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    recognition.onresult = async (event) => {
+    recognition.onresult = async (event: SpeechRecognitionEvent) => {
       const transcript = event.results[0][0].transcript;
       setIsListening(false);
 
@@ -117,7 +140,7 @@ const Index = () => {
     };
 
     recognition.onerror = (event) => {
-      console.error("Erro no reconhecimento de voz:", event.error);
+      console.error("Erro no reconhecimento de voz:", event);
       toast({
         title: "Erro",
         description: "Ocorreu um erro no reconhecimento de voz.",
